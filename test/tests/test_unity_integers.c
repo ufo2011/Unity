@@ -1,8 +1,9 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "unity.h"
 #define TEST_INSTANCES
@@ -696,6 +697,40 @@ void testNotEqualPointers(void)
 {
     EXPECT_ABORT_BEGIN
     TEST_ASSERT_EQUAL_PTR(0x12345678, 0x12345677);
+    VERIFY_FAILS_END
+}
+
+void testNotEqualPtr(void)
+{
+    int v0, v1;
+    int *p0, *p1;
+
+    v0 = 19467;
+    v1 = 18271;
+    p0 = &v0;
+    p1 = &v1;
+
+    TEST_ASSERT_NOT_EQUAL_PTR(p0, p1);
+    TEST_ASSERT_NOT_EQUAL_PTR(&v0, &v1);
+    TEST_ASSERT_NOT_EQUAL_PTR(p0, &v1);
+    TEST_ASSERT_NOT_EQUAL_PTR(NULL, &v0);
+    TEST_ASSERT_NOT_EQUAL_PTR(&v0, NULL);
+}
+
+void testNotNotEqualPointers(void)
+{
+    int v0;
+    int *p0 = &v0;
+
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_PTR(p0, p0);
+    VERIFY_FAILS_END
+}
+
+void testNotNotEqualPointers_BothNull(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_PTR(NULL, NULL);
     VERIFY_FAILS_END
 }
 

@@ -1,8 +1,9 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "unity.h"
 #define TEST_INSTANCES
@@ -169,6 +170,70 @@ void testNotEqualString_ActualStringIsLonger(void)
 {
     EXPECT_ABORT_BEGIN
     TEST_ASSERT_EQUAL_STRING("foo", "foo2");
+    VERIFY_FAILS_END
+}
+
+void testNotEqualStrings(void)
+{
+    TEST_ASSERT_NOT_EQUAL_STRING("foo", "bar");
+    TEST_ASSERT_NOT_EQUAL_STRING_MESSAGE("foo", "bar", "foo should not equal bar");
+    TEST_ASSERT_NOT_EQUAL_STRING("foo", "");
+    TEST_ASSERT_NOT_EQUAL_STRING("", "bar");
+    TEST_ASSERT_NOT_EQUAL_STRING("foo", "foo2");
+    TEST_ASSERT_NOT_EQUAL_STRING("foo2", "foo");
+    TEST_ASSERT_NOT_EQUAL_STRING(NULL, "bar");
+    TEST_ASSERT_NOT_EQUAL_STRING("foo", NULL);
+}
+
+void testNotNotEqualString1(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING("foo", "foo");
+    VERIFY_FAILS_END
+}
+
+void testNotNotEqualString2(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING(NULL, NULL);
+    VERIFY_FAILS_END
+}
+
+void testNotEqualStringsLen(void)
+{
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foobar", "foobaz", 6);
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN_MESSAGE("foo", "bar", 3, "foo should not equal bar");
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foo", "", 3);
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("", "bar", 3);
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN(NULL, "bar", 3);
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foo", NULL, 3);
+}
+
+void testNotNotEqualStringLen1(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foobar", "foobaz", 5);
+    VERIFY_FAILS_END
+}
+
+void testNotNotEqualStringLen2(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foo", "foo", 3);
+    VERIFY_FAILS_END
+}
+
+void testNotNotEqualStringLen3(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN(NULL, NULL, 3);
+    VERIFY_FAILS_END
+}
+
+void testNotNotEqualStringLenZero(void)
+{
+    EXPECT_ABORT_BEGIN
+    TEST_ASSERT_NOT_EQUAL_STRING_LEN("foo", "bar", 0);
     VERIFY_FAILS_END
 }
 

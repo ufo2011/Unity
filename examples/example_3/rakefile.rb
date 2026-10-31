@@ -1,3 +1,10 @@
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
+
 require 'rake'
 require 'rake/clean'
 require_relative 'rakefile_helper'
@@ -13,8 +20,7 @@ end
 
 task prepare_for_tests: TEMP_DIRS
 
-# Load default configuration, for now
-DEFAULT_CONFIG_FILE = 'target_gcc_32.yml'.freeze
+DEFAULT_CONFIG_FILE = 'gcc.yml'.freeze
 configure_toolchain(DEFAULT_CONFIG_FILE)
 
 task unit: [:prepare_for_tests] do

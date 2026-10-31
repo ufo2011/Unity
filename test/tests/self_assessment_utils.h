@@ -1,3 +1,10 @@
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
+
 #ifdef TEST_INSTANCES
 
 #include <string.h>
@@ -62,8 +69,13 @@ static const UNITY_DOUBLE d_zero = 0.0;
 #define SPY_BUFFER_MAX 40
 static char putcharSpyBuffer[SPY_BUFFER_MAX];
 #endif
-static int indexSpyBuffer;
-static int putcharSpyEnabled;
+static UNITY_COUNTER_TYPE indexSpyBuffer;
+static UNITY_COUNTER_TYPE putcharSpyEnabled;
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
+#endif
 
 void startPutcharSpy(void)
 {
@@ -101,8 +113,8 @@ void putcharSpy(int c)
 }
 
 /* This is for counting the calls to the flushSpy */
-static int flushSpyEnabled;
-static int flushSpyCalls = 0;
+static UNITY_COUNTER_TYPE flushSpyEnabled;
+static UNITY_COUNTER_TYPE flushSpyCalls = 0;
 
 void startFlushSpy(void)
 {
@@ -116,7 +128,7 @@ void endFlushSpy(void)
     flushSpyEnabled = 0;
 }
 
-int getFlushSpyCalls(void)
+UNITY_COUNTER_TYPE getFlushSpyCalls(void)
 {
     return flushSpyCalls;
 }
@@ -126,19 +138,30 @@ void flushSpy(void)
     if (flushSpyEnabled){ flushSpyCalls++; }
 }
 
-#define TEST_ASSERT_EQUAL_PRINT_NUMBERS(expected, actual) {             \
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+#define TEST_ASSERT_EQUAL_PRINT_NUMBERS(expected, actual) do {          \
         startPutcharSpy(); UnityPrintNumber((actual)); endPutcharSpy(); \
         TEST_ASSERT_EQUAL_STRING((expected), getBufferPutcharSpy());    \
-        }
+        } while (0)
 
-#define TEST_ASSERT_EQUAL_PRINT_UNSIGNED_NUMBERS(expected, actual) {            \
+#define TEST_ASSERT_EQUAL_PRINT_UNSIGNED_NUMBERS(expected, actual) do {         \
         startPutcharSpy(); UnityPrintNumberUnsigned((actual)); endPutcharSpy(); \
         TEST_ASSERT_EQUAL_STRING((expected), getBufferPutcharSpy());            \
-        }
+        } while (0)
 
-#define TEST_ASSERT_EQUAL_PRINT_FLOATING(expected, actual) {            \
+#define TEST_ASSERT_EQUAL_PRINT_FLOATING(expected, actual) do {         \
         startPutcharSpy(); UnityPrintFloat((actual)); endPutcharSpy();  \
         TEST_ASSERT_EQUAL_STRING((expected), getBufferPutcharSpy());    \
-        }
+        } while (0)
 
+#endif
+
+// The reason this isn't folded into the above diagnostic is to semi-isolate
+// the header contents from the user content it is included into.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-prototypes"
 #endif

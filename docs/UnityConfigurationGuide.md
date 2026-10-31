@@ -33,7 +33,7 @@ In either case, you've got a couple choices for configuring these options:
 
 Unfortunately, it doesn't usually work well to just #define these things in the test itself.
 These defines need to take effect where ever unity.h is included.
-This would be test test, the test runner (if you're generating one), and from unity.c when it's compiled.
+This would be the test, the test runner (if you're generating one), and from unity.c when it's compiled.
 
 ## The Options
 
@@ -222,6 +222,17 @@ _Example:_
 #define UNITY_FLOAT_PRECISION 0.001f
 ```
 
+#### `UNITY_IS_NAN` and `UNITY_IS_INF`
+
+If your toolchain defines `isnan` and `isinf` in `math.h` as macros, nothing needs to be done. If your toolchain doesn't define these, Unity
+will create these macros itself. You may override either or both of these defines to specify how you want to evaluate if a number is NaN or Infinity.
+
+_Example:_
+
+```C
+#define UNITY_IS_NAN(n) ((n != n) ? 1 : 0)
+```
+
 ### Miscellaneous
 
 #### `UNITY_EXCLUDE_STDDEF_H`
@@ -352,7 +363,7 @@ Feel free to override this and to make it whatever you wish.
 _Example:_
 
 ```C
-#define UNITY_PRINT_EOL { UNITY_OUTPUT_CHAR('\r'); UNITY_OUTPUT_CHAR('\n'); }
+#define UNITY_PRINT_EOL() { UNITY_OUTPUT_CHAR('\r'); UNITY_OUTPUT_CHAR('\n'); }
 ```
 
 #### `UNITY_EXCLUDE_DETAILS`
@@ -470,6 +481,38 @@ _Example:_
 ```C
 #define UNITY_OUTPUT_COLOR
 ```
+
+#### `UNITY_INCLUDE_EXEC_TIME`
+
+Define this to measure and report execution time for each test in the suite. When enabled, Unity will do
+it's best to automatically find a way to determine the time in milliseconds. On most Windows, macos, or 
+Linux environments, this is automatic. If not, you can give Unity more information.
+
+On Unix and macOS, the default uses POSIX `clock_gettime(CLOCK_MONOTONIC)` when that clock is available.
+If it is not (strict ISO C with no POSIX clocks in `<time.h>`), it falls back to the standard `clock()` function,
+which is also the Windows default.
+
+#### `UNITY_CLOCK_MS`
+
+If you're working on a system (embedded or otherwise) which has an accessible millisecond timer. You can
+define `UNITY_CLOCK_MS` to be the name of the function which returns the millisecond timer. It will then
+attempt to use that function for timing purposes.
+
+#### `UNITY_EXEC_TIME_START`
+
+Define this hook to start a millisecond timer if necessary.
+
+#### `UNITY_EXEC_TIME_STOP`
+
+Define this hook to stop a millisecond timer if necessary.
+
+#### `UNITY_PRINT_EXEC_TIME`
+
+Define this hook to print the current execution time. Used to report the milliseconds elapsed.
+
+#### `UNITY_TIME_TYPE`
+
+Finally, this can be set to the type which holds the millisecond timer.
 
 #### `UNITY_SHORTHAND_AS_INT`
 

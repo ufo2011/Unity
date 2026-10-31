@@ -1,9 +1,9 @@
-/* Copyright (c) 2010 James Grenning and Contributed to Unity Project
- * ==========================================
- *  Unity Project - A Test Framework for C
- *  Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
- *  [Released under MIT License. Please refer to license.txt for details]
- * ========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #ifndef UNITY_FIXTURE_INTERNALS_H_
 #define UNITY_FIXTURE_INTERNALS_H_
@@ -17,9 +17,12 @@ struct UNITY_FIXTURE_T
 {
     int Verbose;
     int Silent;
+    int DryRun;
     unsigned int RepeatCount;
     const char* NameFilter;
+    const char* Name;
     const char* GroupFilter;
+    const char* Group;
 };
 extern struct UNITY_FIXTURE_T UnityFixture;
 

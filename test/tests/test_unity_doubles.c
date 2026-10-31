@@ -1,8 +1,9 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "unity.h"
 #define TEST_INSTANCES
@@ -1276,9 +1277,9 @@ void testDoublePrintingInfinityAndNaN(void)
 #if defined(UNITY_EXCLUDE_FLOAT_PRINT) || defined(UNITY_EXCLUDE_DOUBLE) || !defined(USING_OUTPUT_SPY)
     TEST_IGNORE();
 #else
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("inf",   1.0 / d_zero);
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("-inf", -1.0 / d_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("Infinity",   1.0 / d_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("Negative Infinity", -1.0 / d_zero);
 
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("nan",   0.0 / d_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("NaN",   0.0 / d_zero);
 #endif
 }

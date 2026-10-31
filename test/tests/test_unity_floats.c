@@ -1,8 +1,9 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "unity.h"
 #define TEST_INSTANCES
@@ -1207,6 +1208,9 @@ void testNotEqualFloatEachEqualLengthZero(void)
 #endif
 }
 
+#if defined(UNITY_EXCLUDE_FLOAT_PRINT) || defined(UNITY_INCLUDE_DOUBLE) || !defined(USING_OUTPUT_SPY)
+UNITY_FUNCTION_ATTR(noreturn)
+#endif
 void testFloatPrinting(void)
 {
 #if defined(UNITY_EXCLUDE_FLOAT_PRINT) || defined(UNITY_INCLUDE_DOUBLE) || !defined(USING_OUTPUT_SPY)
@@ -1256,6 +1260,9 @@ void testFloatPrinting(void)
 #endif
 }
 
+#if defined(UNITY_EXCLUDE_FLOAT_PRINT) || defined(UNITY_INCLUDE_DOUBLE) || !defined(USING_OUTPUT_SPY)
+UNITY_FUNCTION_ATTR(noreturn)
+#endif
 void testFloatPrintingRoundTiesToEven(void)
 {
 #if defined(UNITY_EXCLUDE_FLOAT_PRINT) || defined(UNITY_INCLUDE_DOUBLE) || !defined(USING_OUTPUT_SPY)
@@ -1280,10 +1287,10 @@ void testFloatPrintingInfinityAndNaN(void)
 #if defined(UNITY_EXCLUDE_FLOAT_PRINT) || !defined(USING_OUTPUT_SPY)
     TEST_IGNORE();
 #else
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("inf",   1.0f / f_zero);
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("-inf", -1.0f / f_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("Infinity",   1.0f / f_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("Negative Infinity", -1.0f / f_zero);
 
-    TEST_ASSERT_EQUAL_PRINT_FLOATING("nan",   0.0f / f_zero);
+    TEST_ASSERT_EQUAL_PRINT_FLOATING("NaN",   0.0f / f_zero);
 #endif
 }
 
@@ -1298,7 +1305,7 @@ static void printFloatValue(float f)
 
     sprintf(expected, "%.9g", f);
     /* We print all NaN's as "nan", not "-nan" */
-    if (strcmp(expected, "-nan") == 0) strcpy(expected, "nan");
+    if (strcmp(expected, "-nan") == 0) strcpy(expected, "NaN");
 
     if (strcmp(expected, getBufferPutcharSpy()))
     {
@@ -1322,7 +1329,7 @@ static void printFloatValue(float f)
 
     sprintf(expected, "%.7g", f);
     /* We print all NaN's as "nan", not "-nan" */
-    if (strcmp(expected, "-nan") == 0) strcpy(expected, "nan");
+    if (strcmp(expected, "-nan") == 0) strcpy(expected, "NaN");
 
     strcpy(expected_lower, expected);
     strcpy(expected_lower2, expected);
@@ -1367,6 +1374,9 @@ static void printFloatValue(float f)
 #endif
 #endif
 
+#if !defined(UNITY_TEST_ALL_FLOATS_PRINT_OK) || !defined(USING_OUTPUT_SPY)
+UNITY_FUNCTION_ATTR(noreturn)
+#endif
 void testFloatPrintingRandomSamples(void)
 {
 #if !defined(UNITY_TEST_ALL_FLOATS_PRINT_OK) || !defined(USING_OUTPUT_SPY)

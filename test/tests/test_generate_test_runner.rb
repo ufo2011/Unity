@@ -1,8 +1,9 @@
-# ==========================================
-#   CMock Project - Automatic Mock Generation for C
-#   Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 
 require '../auto/generate_test_runner.rb'
 
@@ -67,6 +68,21 @@ RUNNER_TESTS = [
                   ],
       :to_fail => [ 'test_ThisTestAlwaysFails' ],
       :to_ignore => [ 'test_ThisTestAlwaysIgnored' ],
+    }
+  },
+
+  { :name => 'SameNamedMocksByFolder',
+    :testfile => 'testdata/testRunnerGeneratorWithSameNamedMocks.c',
+    :testdefines => ['TEST'],
+    :options => {
+      :mock_name_include_folder => true,
+    },
+    :expected => {
+      :to_pass => [ 'test_ShouldInitEachSameNamedMock',
+                    'test_ShouldVerifyAndDestroyEachSameNamedMock',
+                  ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
     }
   },
 
@@ -334,6 +350,17 @@ RUNNER_TESTS = [
     }
   },
 
+
+  { :name => 'EmptyFileWarning',
+    :testfile => 'testdata/testRunnerGeneratorEmpty.c',
+    :testdefines => ['TEST'],
+    :options => nil, #defaults
+    :expected => {
+      :to_pass => [ ],
+      :to_fail => [ ],
+      :to_ignore => [ 'test_empty_warning' ],
+    }
+  },
 
   #### WITH MOCKS ##########################################
 
@@ -739,7 +766,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n test_",
+    :cmdline_args => "-f test_",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'test_NotBeConfusedByLongComplicatedStrings',
@@ -757,7 +784,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n should_",
+    :cmdline_args => "-f should_",
     :expected => {
       :to_pass => [ 'should_RunTestsStartingWithShouldByDefault' ],
       :to_fail => [  ],
@@ -771,7 +798,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n should_,test_",
+    :cmdline_args => "-f should_,test_",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'test_NotBeConfusedByLongComplicatedStrings',
@@ -789,7 +816,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n=testRunnerGeneratorSma*",
+    :cmdline_args => "-f=testRunnerGeneratorSma*",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'spec_ThisTestPassesWhenNormalSetupRan',
@@ -805,7 +832,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGeneratorSmall:*",
+    :cmdline_args => "-f testRunnerGeneratorSmall:*",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'spec_ThisTestPassesWhenNormalSetupRan',
@@ -821,7 +848,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGeneratorSmall:test_*",
+    :cmdline_args => "-f testRunnerGeneratorSmall:test_*",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ 'test_ThisTestAlwaysFails' ],
@@ -835,7 +862,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGeneratorSmall:te*",
+    :cmdline_args => "-f testRunnerGeneratorSmall:te*",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ 'test_ThisTestAlwaysFails' ],
@@ -849,7 +876,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGeneratorSm*:*",
+    :cmdline_args => "-f testRunnerGeneratorSm*:*",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'spec_ThisTestPassesWhenNormalSetupRan',
@@ -884,7 +911,7 @@ RUNNER_TESTS = [
       :cmdline_args => true,
       :includes => ['Defs.h'],
     },
-    :cmdline_args => "-n test_ -x Ignored",
+    :cmdline_args => "-f test_ -x Ignored",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'test_NotBeConfusedByLongComplicatedStrings',
@@ -902,7 +929,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n ThisTestAlwaysPasses",
+    :cmdline_args => "-f ThisTestAlwaysPasses",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ ],
@@ -916,7 +943,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGenerator:ThisTestAlwaysPasses",
+    :cmdline_args => "-f testRunnerGenerator:ThisTestAlwaysPasses",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ ],
@@ -930,7 +957,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGenerator.c:ThisTestAlwaysPasses",
+    :cmdline_args => "-f testRunnerGenerator.c:ThisTestAlwaysPasses",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ ],
@@ -944,7 +971,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n \"testRunnerGenerator:ThisTestAlwaysPasses,test_ThisTestAlwaysFails\"",
+    :cmdline_args => "-f \"testRunnerGenerator:ThisTestAlwaysPasses,test_ThisTestAlwaysFails\"",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ 'test_ThisTestAlwaysFails' ],
@@ -958,10 +985,52 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n 'testRunnerGenerator:ThisTestAlwaysPasses,test_ThisTestAlwaysFails'",
+    :cmdline_args => "-f 'testRunnerGenerator:ThisTestAlwaysPasses,test_ThisTestAlwaysFails'",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses' ],
       :to_fail => [ 'test_ThisTestAlwaysFails' ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsHandlePreciseMatch',
+    :testfile => 'testdata/testRunnerGenerator.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-n 'test_ThisTestAlwaysPasses'",
+    :expected => {
+      :to_pass => [ 'test_ThisTestAlwaysPasses' ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsHandlePreciseMatches',
+    :testfile => 'testdata/testRunnerGenerator.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-n 'test_ThisTestAlwaysPasses,test_ThisTestAlwaysFails'",
+    :expected => {
+      :to_pass => [ 'test_ThisTestAlwaysPasses' ],
+      :to_fail => [ 'test_ThisTestAlwaysFails' ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsRequiresPreciseMatchNotPartial',
+    :testfile => 'testdata/testRunnerGenerator.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-n ThisTestAlwaysPass",
+    :expected => {
+      :to_pass => [ ],
+      :to_fail => [ ],
       :to_ignore => [ ],
     }
   },
@@ -972,7 +1041,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n AnotherFile:ThisTestDoesNotExist",
+    :cmdline_args => "-f AnotherFile:ThisTestDoesNotExist",
     :expected => {
       :to_pass => [ ],
       :to_fail => [ ],
@@ -986,7 +1055,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n ThisTestDoesNotExist",
+    :cmdline_args => "-f ThisTestDoesNotExist",
     :expected => {
       :to_pass => [ ],
       :to_fail => [ ],
@@ -1014,7 +1083,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n testRunnerGenerator",
+    :cmdline_args => "-f testRunnerGenerator",
     :expected => {
       :to_pass => [ 'test_ThisTestAlwaysPasses',
                     'spec_ThisTestPassesWhenNormalSetupRan',
@@ -1052,7 +1121,7 @@ RUNNER_TESTS = [
       :cmdline_args => true,
       :test_prefix => "paratest"
     },
-    :cmdline_args => "-n ShouldHandleParameterizedTests",
+    :cmdline_args => "-f ShouldHandleParameterizedTests",
     :features => [ :parameterized ],
     :expected => {
       :to_pass => [ 'paratest_ShouldHandleParameterizedTests\(25\)',
@@ -1061,6 +1130,106 @@ RUNNER_TESTS = [
                     'paratest_ShouldHandleParameterizedTests2\(7\)',
                   ],
       :to_fail => [ 'paratest_ShouldHandleParameterizedTestsThatFail\(17\)' ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsIncludeParameterizedWithComma',
+    :testfile => 'testdata/testRunnerGeneratorParameterizedArgs.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :test_prefix => "paratest",
+      :use_param_tests => true,
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-f 'paratest_First(0,0)'",
+    :features => [ :parameterized ],
+    :expected => {
+      :to_pass => [
+                    'paratest_First\(0,0\)',
+                  ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsPreciseMatchParameterizedWithComma',
+    :testfile => 'testdata/testRunnerGeneratorParameterizedArgs.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :test_prefix => "paratest",
+      :use_param_tests => true,
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-n 'paratest_First(0,0)'",
+    :features => [ :parameterized ],
+    :expected => {
+      :to_pass => [
+                    'paratest_First\(0,0\)',
+                  ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsIncludeParameterizedWithCommaNoMatch',
+    :testfile => 'testdata/testRunnerGeneratorParameterizedArgs.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :test_prefix => "paratest",
+      :use_param_tests => true,
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-f 'paratest_First(0,100)'",
+    :features => [ :parameterized ],
+    :expected => {
+      :to_pass => [ ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsIncludeParameterizedWithCommaAlternatives',
+    :testfile => 'testdata/testRunnerGeneratorParameterizedArgs.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :test_prefix => "paratest",
+      :use_param_tests => true,
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-f 'paratest_First(1,1),paratest_Second(2,2),paratest_Plain'",
+    :features => [ :parameterized ],
+    :expected => {
+      :to_pass => [
+                    'paratest_First\(1,1\)',
+                    'paratest_Second\(2,2\)',
+                    'paratest_Plain',
+                  ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+    }
+  },
+
+  { :name => 'ArgsExcludeParameterizedWithComma',
+    :testfile => 'testdata/testRunnerGeneratorParameterizedArgs.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :test_prefix => "paratest",
+      :use_param_tests => true,
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-x 'paratest_First(0,0)'",
+    :features => [ :parameterized ],
+    :expected => {
+      :to_pass => [
+                    'paratest_First\(1,1\)',
+                    'paratest_First\(10,10\)',
+                    'paratest_Second\(0,0\)',
+                    'paratest_Second\(2,2\)',
+                    'paratest_Second\(20,20\)',
+                    'paratest_Plain',
+                  ],
+      :to_fail => [ ],
       :to_ignore => [ ],
     }
   },
@@ -1123,7 +1292,7 @@ RUNNER_TESTS = [
     :options => {
       :cmdline_args => true,
     },
-    :cmdline_args => "-n",
+    :cmdline_args => "-f",
     :expected => {
       :to_pass => [ ],
       :to_fail => [ ],
@@ -1158,15 +1327,46 @@ RUNNER_TESTS = [
       :to_pass => [ ],
       :to_fail => [ ],
       :to_ignore => [ ],
-      :text => [ "ERROR: Unknown Option z" ],
+      :text => [
+        "ERROR: Unknown Option z",
+        "Options:",
+        "-l        List all tests and exit",
+        "-f NAME   Filter to run only tests whose name includes NAME",
+        "-n NAME   Run only the test named NAME",
+        "-h        show this Help menu",
+        "-q        Quiet/decrease verbosity",
+        "-v        increase Verbosity",
+        "-x NAME   eXclude tests whose name includes NAME",
+      ],
+    }
+  },
+
+  { :name => 'ArgsHelp',
+    :testfile => 'testdata/testRunnerGenerator.c',
+    :testdefines => ['TEST', 'UNITY_USE_COMMAND_LINE_ARGS'],
+    :options => {
+      :cmdline_args => true,
+    },
+    :cmdline_args => "-h",
+    :expected => {
+      :to_pass => [ ],
+      :to_fail => [ ],
+      :to_ignore => [ ],
+      :text => [
+        "Options:",
+        "-l        List all tests and exit",
+        "-f NAME   Filter to run only tests whose name includes NAME",
+        "-n NAME   Run only the test named NAME",
+        "-h        show this Help menu",
+        "-q        Quiet/decrease verbosity",
+        "-v        increase Verbosity",
+        "-x NAME   eXclude tests whose name includes NAME",
+      ],
     }
   },
 ]
 
 def runner_test(test, runner, expected, test_defines, cmdline_args, features)
-  # Tack on TEST define for compiling unit tests
-  load_configuration($cfg_file)
-
   # Drop Out if we're skipping this type of test
   if $cfg[:skip_tests] && features
     if $cfg[:skip_tests].include?(:parameterized) && features.include?(:parameterized)
@@ -1227,6 +1427,109 @@ def verify_number(expected, expression, output)
     report "  FAIL: Expected #{exp} Matches For /#{expression.to_s}/. Was #{act}"
     return false
   end
+end
+
+should 'GenerateSuiteTeardownWhenBeginAndEndAreOmitted' do
+  runner_name = OUT_FILE + 'SuiteTeardownWithoutBeginEnd_runner.c'
+  UnityTestRunnerGenerator.new(
+    :test_prefix => 'test',
+    :suite_teardown => '  return num_failures;',
+    :omit_begin_end => true,
+  ).run('testdata/testRunnerGenerator.c', runner_name)
+
+  runner = File.read(runner_name)
+  correct_call = runner.include?('(void) suiteTearDown(0);')
+  incorrect_call = runner.include?('(void) suite_teardown(0);')
+  if correct_call && !incorrect_call
+    report 'Runner_GenerateSuiteTeardownWhenBeginAndEndAreOmitted:PASS'
+  else
+    report 'Runner_GenerateSuiteTeardownWhenBeginAndEndAreOmitted:FAIL'
+    $generate_test_runner_failures += 1
+  end
+  $generate_test_runner_tests += 1
+end
+
+should 'FindTestsLineNumbersWhenNameStartsTheLine' do
+  # The return type may sit on its own line, leaving the test name at column 0.
+  # The line search must still find the definition (and must not scan to the end
+  # of the file for every test, which is what made large files slow).
+  source = "#include \"unity.h\"\n" \
+           "\n" \
+           "void\n" \
+           "test_FirstAtColumnZero(void)\n" \
+           "{\n" \
+           "}\n" \
+           "\n" \
+           "void\n" \
+           "test_SecondAtColumnZero(void)\n" \
+           "{\n" \
+           "}\n"
+  found = UnityTestRunnerGenerator.new({}).find_tests(source).map { |t| [t[:test], t[:line_number]] }
+  expected = [['test_FirstAtColumnZero', 4], ['test_SecondAtColumnZero', 9]]
+  if found == expected
+    report 'Runner_FindTestsLineNumbersWhenNameStartsTheLine:PASS'
+  else
+    report "  FAIL: expected #{expected.inspect}, got #{found.inspect}"
+    report 'Runner_FindTestsLineNumbersWhenNameStartsTheLine:FAIL'
+    $generate_test_runner_failures += 1
+  end
+  $generate_test_runner_tests += 1
+end
+
+should 'FindTestsLineNumbersWhenOneNameIsAPrefixOfAnother' do
+  # Issue #288: test_my_function must not be located inside
+  # test_my_function_invalid_behavior, which is defined first.
+  source = "void test_my_function_invalid_behavior(void)\n" \
+           "{\n" \
+           "}\n" \
+           "\n" \
+           "void test_my_function(void)\n" \
+           "{\n" \
+           "}\n"
+  found = UnityTestRunnerGenerator.new({}).find_tests(source).map { |t| [t[:test], t[:line_number]] }
+  expected = [['test_my_function_invalid_behavior', 1], ['test_my_function', 5]]
+  if found == expected
+    report 'Runner_FindTestsLineNumbersWhenOneNameIsAPrefixOfAnother:PASS'
+  else
+    report "  FAIL: expected #{expected.inspect}, got #{found.inspect}"
+    report 'Runner_FindTestsLineNumbersWhenOneNameIsAPrefixOfAnother:FAIL'
+    $generate_test_runner_failures += 1
+  end
+  $generate_test_runner_tests += 1
+end
+
+should 'NameMocksByBasenameWithoutFolderOption' do
+  runner_name = OUT_FILE + 'SameNamedMocksByBasename_runner.c'
+  UnityTestRunnerGenerator.new({}).run('testdata/testRunnerGeneratorWithSameNamedMocks.c', runner_name)
+
+  runner = File.read(runner_name)
+  if runner.scan('  MockConfig_Init();').length == 2 && !runner.include?('uart_MockConfig_Init();')
+    report 'Runner_NameMocksByBasenameWithoutFolderOption:PASS'
+  else
+    report 'Runner_NameMocksByBasenameWithoutFolderOption:FAIL'
+    $generate_test_runner_failures += 1
+  end
+  $generate_test_runner_tests += 1
+end
+
+should 'FindTestsKeepsBracesInTestCaseArguments' do
+  # Issue #752: a compound literal such as (uint8_t[]){1, 2} contains braces,
+  # which must not end the logical line before the test function is found.
+  source = "TEST_CASE((uint8_t[]){0x1, 0x2, 0x3}, 3)\n" \
+           "TEST_CASE((uint8_t[]){0x4}, 1)\n" \
+           "void test_WithArray(const uint8_t * data, unsigned len)\n" \
+           "{\n" \
+           "}\n"
+  found = UnityTestRunnerGenerator.new(use_param_tests: true).find_tests(source).map { |t| [t[:test], t[:args]] }
+  expected = [['test_WithArray', ['(uint8_t[]){0x1, 0x2, 0x3}, 3', '(uint8_t[]){0x4}, 1']]]
+  if found == expected
+    report 'Runner_FindTestsKeepsBracesInTestCaseArguments:PASS'
+  else
+    report "  FAIL: expected #{expected.inspect}, got #{found.inspect}"
+    report 'Runner_FindTestsKeepsBracesInTestCaseArguments:FAIL'
+    $generate_test_runner_failures += 1
+  end
+  $generate_test_runner_tests += 1
 end
 
 RUNNER_TESTS.each do |testset|

@@ -1,10 +1,11 @@
-# ==========================================
-#   Unity Project - A Test Framework for C
-#   Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+#!/usr/bin/env ruby
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 
-# !/usr/bin/ruby
 #
 # unity_test_summary.rb
 #
@@ -86,7 +87,14 @@ class UnityTestSummary
   def get_details(_result_file, lines)
     results = { failures: [], ignores: [], successes: [] }
     lines.each do |line|
-      _src_file, _src_line, _test_name, status, _msg = line.split(/:/)
+      status_match = line.match(/^[^:]+:[^:]+:\w+(?:\([^)]*\))?:([^:]+):?/)
+      next unless status_match
+
+      status = status_match.captures[0]
+      # A line ending in :PASS is a passing expected-failure test; the FAIL
+      # earlier on the same line was the intentional (caught) assertion.
+      status = 'PASS' if line.end_with?(':PASS') && status == 'FAIL'
+
       line_out = (@root && (@root != 0) ? "#{@root}#{line}" : line).gsub(/\//, '\\')
       case status
       when 'IGNORE' then results[:ignores]   << line_out
@@ -108,7 +116,7 @@ if $0 == __FILE__
 
   # parse out the command options
   opts, args = ARGV.partition { |v| v =~ /^--\w+/ }
-  opts.map! { |v| v[2..-1].to_sym }
+  opts.map! { |v| v[2..].to_sym }
 
   # create an instance to work with
   uts = UnityTestSummary.new(opts)
@@ -116,7 +124,7 @@ if $0 == __FILE__
   begin
     # look in the specified or current directory for result files
     args[0] ||= './'
-    targets = "#{ARGV[0].tr('\\', '/')}**/*.test*"
+    targets = "#{args[0].tr('\\', '/')}**/*.test*"
     results = Dir[targets]
 
     raise "No *.testpass, *.testfail, or *.testresults files found in '#{targets}'" if results.empty?
@@ -124,8 +132,8 @@ if $0 == __FILE__
     uts.targets = results
 
     # set the root path
-    args[1] ||= Dir.pwd + '/'
-    uts.root = ARGV[1]
+    args[1] ||= "#{Dir.pwd}/"
+    uts.root = args[1]
 
     # run the summarizer
     puts uts.run

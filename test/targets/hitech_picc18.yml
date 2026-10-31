@@ -1,3 +1,15 @@
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
+
+# This file provides a sample configuration for working with Hitech's PICC
+# toolchain, targetting native compilation, using mostly default settings,
+# with many warnings enabled for self-validation. It can be modified or 
+# mixed to customize for your project needs.
+
 ---
 :cmock:
   :plugins: []
@@ -9,7 +21,6 @@
     else
       _PASSED_TESTS();
     return 0;
-colour: true
 :tools:
   :test_compiler:
     :name: compiler
@@ -32,9 +43,8 @@ colour: true
     - "--opt=none"
     - "-c"
     - "-M"
-    - '-I"$": COLLECTION_PATHS_TEST_TOOLCHAIN_INCLUDE'
-    - '-I"$": COLLECTION_PATHS_TEST_SUPPORT_SOURCE_INCLUDE_VENDOR'
-    - "-D$: COLLECTION_DEFINES_TEST_AND_VENDOR"
+    - '-I"${5}"'
+    - "-D${6}"
     - "${1}"
     - " ${2}"
   :test_linker:
@@ -65,22 +75,12 @@ colour: true
     :name: simulator
     :executable: 'java -client -jar '
     :arguments:
-    - - C:\Program Files\HI-TECH Software\HI-TIDE\3.15\lib\
-      - simpic18.jar
+    - \C:\Program Files\HI-TECH Software\HI-TIDE\3.15\lib\simpic18.jar
     - 18F87J10
     - "${1}"
 :extension:
   :object: ".obj"
   :executable: ".hex"
-:paths:
-  :test:
-    - c:/Projects/NexGen/Prototypes/CMockTest/src/
-    - c:/Projects/NexGen/Prototypes/CMockTest/mocks/
-    - c:/CMock/src/
-    - c:/CMock/examples/src/
-    - c:/CMock/vendor/unity/src/
-    - c:/CMock/vendor/unity/examples/helper/
-    - tests\
 :defines:
   :test:
   - UNITY_INT_WIDTH=16

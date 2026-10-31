@@ -1,8 +1,9 @@
-# ==========================================
-#   Unity Project - A Test Framework for C
-#   Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 
 require_relative 'colour_prompt'
 
@@ -12,12 +13,18 @@ def report(message)
   if !$colour_output
     $stdout.puts(message)
   else
-    message = message.join('\n') if message.class == Array
+    message = message.join('\n') if message.instance_of?(Array)
     message.each_line do |line|
       line.chomp!
       colour = case line
                when /(?:total\s+)?tests:?\s+(\d+)\s+(?:total\s+)?failures:?\s+\d+\s+Ignored:?/i
                  Regexp.last_match(1).to_i.zero? ? :green : :red
+               when /^\[FAIL\]/
+                 :red
+               when /^\[p   \]/
+                 :green
+               when /^\[i---\]/
+                 :green
                when /PASS/
                  :green
                when /^OK$/

@@ -1,9 +1,9 @@
-/* Copyright (c) 2010 James Grenning and Contributed to Unity Project
- * ==========================================
- *  Unity Project - A Test Framework for C
- *  Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
- *  [Released under MIT License. Please refer to license.txt for details]
- * ========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "unity_fixture.h"
 
@@ -19,8 +19,11 @@ TEST_GROUP_RUNNER(UnityCommandOptions)
 {
     RUN_TEST_CASE(UnityCommandOptions, DefaultOptions);
     RUN_TEST_CASE(UnityCommandOptions, OptionVerbose);
+    RUN_TEST_CASE(UnityCommandOptions, OptionDryRun);
     RUN_TEST_CASE(UnityCommandOptions, OptionSelectTestByGroup);
     RUN_TEST_CASE(UnityCommandOptions, OptionSelectTestByName);
+    RUN_TEST_CASE(UnityCommandOptions, OptionSelectTestByGroupExact);
+    RUN_TEST_CASE(UnityCommandOptions, OptionSelectTestByNameExact);
     RUN_TEST_CASE(UnityCommandOptions, OptionSelectRepeatTestsDefaultCount);
     RUN_TEST_CASE(UnityCommandOptions, OptionSelectRepeatTestsSpecificCount);
     RUN_TEST_CASE(UnityCommandOptions, MultipleOptions);

@@ -1,3 +1,9 @@
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include "ProductionCode.h"
 
@@ -13,8 +19,8 @@ int FindFunction_WhichIsBroken(int NumberToFind)
     int i = 0;
     while (i < 8) //Notice I should have been in braces
         i++;
-        if (NumbersToFind[i] == NumberToFind) //Yikes!  I'm getting run after the loop finishes instead of during it!
-            return i;
+      if (NumbersToFind[i] == NumberToFind) //Yikes!  I'm getting run after the loop finishes instead of during it!
+        return i;
     return 0;
 }
 

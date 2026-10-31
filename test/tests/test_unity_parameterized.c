@@ -1,8 +1,9 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #include <setjmp.h>
 #include <stdio.h>
@@ -170,6 +171,21 @@ void test_CharsArePreserved(unsigned index, char c)
     NextExpectedCharIndex++;
 }
 
+TEST_CASE((const int[]){1, 2, 3}, 3, 6)
+TEST_CASE((const int[]){4}, 1, 4)
+void test_CompoundLiteralArgsArePreserved(const int * values, unsigned count, int sum)
+{
+    int total = 0;
+    unsigned i;
+
+    for (i = 0; i < count; i++)
+    {
+        total += values[i];
+    }
+
+    TEST_ASSERT_EQUAL_INT(sum, total);
+}
+
 TEST_RANGE([0, 10, 2])
 void test_SingleRange(unsigned value)
 {
@@ -236,7 +252,7 @@ TEST_MATRIX([2, 5l, 4u+3, 4ul], [-2, 3])
 void test_TwoMatrices(unsigned first, signed second)
 {
   static unsigned idx = 0;
-  static const unsigned expected[] =
+  static const signed expected[] =
   {
   // -2   3
      -4,  6, // 2
@@ -244,7 +260,7 @@ void test_TwoMatrices(unsigned first, signed second)
     -14, 21, // 7
      -8, 12, // 4
   };
-  TEST_ASSERT_EQUAL_INT(expected[idx++], first * second);
+  TEST_ASSERT_EQUAL_INT(expected[idx++], (signed)first * second);
 }
 
 TEST_MATRIX(["String1", "String,2", "Stri" "ng3", "String[4]", "String\"5\""], [-5, 12.5f])
@@ -297,10 +313,10 @@ void test_EnumCharAndArrayMatrices(test_enum_t e, float n, char c)
   TEST_ASSERT_EQUAL_CHAR(exp_char[char_idx], c);
 
   char_idx = (char_idx + 1) % 6;
-  if (char_idx == 0.0f)
+  if ((float)char_idx == 0.0f)
   {
     float_idx = (float_idx + 1) % 3;
-    if (float_idx == 0.0f)
+    if ((float)float_idx == 0.0f)
     {
       enum_idx = (enum_idx + 1) % 3;
     }

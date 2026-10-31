@@ -1,17 +1,17 @@
-#!/usr/bin/ruby
-
-# ==========================================
-#   Unity Project - A Test Framework for C
-#   Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+#!/usr/bin/env ruby
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 
 class UnityTestRunnerGenerator
   def initialize(options = nil)
     @options = UnityTestRunnerGenerator.default_options
     case options
     when NilClass
-      @options
+      nil # leave @options unchanged
     when String
       @options.merge!(UnityTestRunnerGenerator.grab_config(options))
     when Hash
@@ -36,6 +36,7 @@ class UnityTestRunnerGenerator
       test_prefix: 'test|spec|should',
       mock_prefix: 'Mock',
       mock_suffix: '',
+      mock_name_include_folder: false,
       setup_name: 'setUp',
       teardown_name: 'tearDown',
       test_reset_name: 'resetTest',
@@ -45,8 +46,11 @@ class UnityTestRunnerGenerator
       cmdline_args: false,
       omit_begin_end: false,
       use_param_tests: false,
+      use_system_files: true,
       include_extensions: '(?:hpp|hh|H|h)',
-      source_extensions: '(?:cpp|cc|ino|C|c)'
+      source_extensions: '(?:cpp|cc|ino|C|c)',
+      shuffle_tests: false,
+      rng_seed: 0
     }
   end
 
@@ -68,27 +72,34 @@ class UnityTestRunnerGenerator
     source = File.read(input_file)
     source = source.force_encoding('ISO-8859-1').encode('utf-8', replace: nil)
     tests = find_tests(source)
-    headers = find_includes(source)
-    testfile_includes = (headers[:local] + headers[:system])
-    used_mocks = find_mocks(testfile_includes)
-    testfile_includes = (testfile_includes - used_mocks)
-    testfile_includes.delete_if { |inc| inc =~ /(unity|cmock)/ }
+    includes = find_includes(source)
+    headers = includes[:headers]
+    used_mocks = find_mocks(headers)
+    headers = (headers - used_mocks)
+    headers.delete_if { |inc| inc =~ /(unity|cmock)/ }
     find_setup_and_teardown(source)
 
     # build runner file
-    generate(input_file, output_file, tests, used_mocks, testfile_includes)
+    generate(input_file, output_file, tests, used_mocks, headers)
 
     # determine which files were used to return them
     all_files_used = [input_file, output_file]
-    all_files_used += testfile_includes.map { |filename| filename + '.c' } unless testfile_includes.empty?
+    all_files_used += headers.reject { |filename| filename =~ /^</ }.map { |filename| "#{filename}.c" } unless headers.empty?
     all_files_used += @options[:includes] unless @options[:includes].empty?
-    all_files_used += headers[:linkonly] unless headers[:linkonly].empty?
+    all_files_used += includes[:linkonly] unless includes[:linkonly].empty?
     all_files_used.uniq
   end
 
+  # Generate a test file for the given features:
+  #   input_file        - the name of the test file this is based on
+  #   output_file       - the name of the test runner file to generate
+  #   tests             - an array of all the tests which can be run from this test runner
+  #   used_mocks        - an array of all mock files which are used by this test runner
+  #   testfile_includes - an array of all included headers, in order, where system headers still have their <> attached
   def generate(input_file, output_file, tests, used_mocks, testfile_includes)
     File.open(output_file, 'w') do |output|
       create_header(output, used_mocks, testfile_includes)
+      create_run_test_params_struct(output)
       create_externs(output, tests, used_mocks)
       create_mock_management(output, used_mocks)
       create_setup(output)
@@ -96,15 +107,17 @@ class UnityTestRunnerGenerator
       create_suite_setup(output)
       create_suite_teardown(output)
       create_reset(output)
-      create_run_test(output) unless tests.empty?
+      create_run_test(output)
       create_args_wrappers(output, tests)
+      create_shuffle_tests(output) if @options[:shuffle_tests]
+      tests = create_warning_test(output, input_file, tests)
       create_main(output, input_file, tests, used_mocks)
     end
 
     return unless @options[:header_file] && !@options[:header_file].empty?
 
     File.open(@options[:header_file], 'w') do |output|
-      create_h_file(output, @options[:header_file], tests, testfile_includes, used_mocks)
+      create_h_file(output, @options[:header_file], tests, headers, used_mocks)
     end
   end
 
@@ -127,6 +140,7 @@ class UnityTestRunnerGenerator
     source_scrubbed = source_scrubbed.gsub(/\/\/(?:.+\/\*|\*(?:$|[^\/])).*$/, '')  # remove line comments that comment out the start of blocks
     source_scrubbed = source_scrubbed.gsub(/\/\*.*?\*\//m, '')                     # remove block comments
     source_scrubbed = source_scrubbed.gsub(/\/\/.*$/, '')                          # remove line comments (all that remain)
+    source_scrubbed = source_scrubbed.gsub(/TEST_(?:CASE|RANGE|MATRIX)\s*(\((?:[^()]|\g<1>)*\))/) { |s| s.gsub(substring_re, substring_subs) } # hide braces of compound literals in parameter lists
     lines = source_scrubbed.split(/(^\s*\#.*$) | (;|\{|\}) /x)                     # Treat preprocessor directives as a logical line. Match ;, {, and } as end of lines
                            .map { |line| line.gsub(substring_unre, substring_unsubs) } # unhide the problematic characters previously removed
 
@@ -144,12 +158,12 @@ class UnityTestRunnerGenerator
       if @options[:use_param_tests] && !arguments.empty?
         args = []
         type_and_args = arguments.split(/TEST_(CASE|RANGE|MATRIX)/)
-        for i in (1...type_and_args.length).step(2)
+        (1...type_and_args.length).step(2).each do |i|
           case type_and_args[i]
-          when "CASE"
+          when 'CASE'
             args << type_and_args[i + 1].sub(/^\s*\(\s*(.*?)\s*\)\s*$/m, '\1')
 
-          when "RANGE"
+          when 'RANGE'
             args += type_and_args[i + 1].scan(/(\[|<)\s*(-?\d+.?\d*)\s*,\s*(-?\d+.?\d*)\s*,\s*(-?\d+.?\d*)\s*(\]|>)/m).map do |arg_values_str|
               exclude_end = arg_values_str[0] == '<' && arg_values_str[-1] == '>'
               arg_values_str[1...-1].map do |arg_value_str|
@@ -163,13 +177,13 @@ class UnityTestRunnerGenerator
               arg_combinations.flatten.join(', ')
             end
 
-          when "MATRIX"
-            single_arg_regex_string = /(?:(?:"(?:\\"|[^\\])*?")+|(?:'\\?.')+|(?:[^\s\]\["'\,]|\[[\d\S_-]+\])+)/.source
+          when 'MATRIX'
+            single_arg_regex_string = /(?:(?:"(?:\\"|[^\\])*?")+|(?:'\\?.')+|(?:[^\s\]\["',]|\[[\d\S_-]+\])+)/.source
             args_regex = /\[((?:\s*#{single_arg_regex_string}\s*,?)*(?:\s*#{single_arg_regex_string})?\s*)\]/m
             arg_elements_regex = /\s*(#{single_arg_regex_string})\s*,\s*/m
 
             args += type_and_args[i + 1].scan(args_regex).flatten.map do |arg_values_str|
-              (arg_values_str + ',').scan(arg_elements_regex)
+              "#{arg_values_str},".scan(arg_elements_regex)
             end.reduce do |result, arg_range_expanded|
               result.product(arg_range_expanded)
             end.map do |arg_combinations|
@@ -188,8 +202,10 @@ class UnityTestRunnerGenerator
     source_lines = source.split("\n")
     source_index = 0
     tests_and_line_numbers.size.times do |i|
-      source_lines[source_index..-1].each_with_index do |line, index|
-        next unless line =~ /\s+#{tests_and_line_numbers[i][:test]}(?:\s|\()/
+      # Compile once per test
+      name_regex = /(?:^|\s)#{tests_and_line_numbers[i][:test]}(?:\s|\()/
+      source_lines[source_index..].each_with_index do |line, index|
+        next unless line =~ name_regex
 
         source_index += index
         tests_and_line_numbers[i][:line_number] = source_index + 1
@@ -206,13 +222,16 @@ class UnityTestRunnerGenerator
     source.gsub!(/\/\*.*?\*\//m, '')                     # remove block comments
     source.gsub!(/\/\/.*$/, '')                          # remove line comments (all that remain)
 
-    # parse out includes
-    includes = {
-      local: source.scan(/^\s*#include\s+\"\s*(.+\.#{@options[:include_extensions]})\s*\"/).flatten,
-      system: source.scan(/^\s*#include\s+<\s*(.+)\s*>/).flatten.map { |inc| "<#{inc}>" },
-      linkonly: source.scan(/^TEST_SOURCE_FILE\(\s*\"\s*(.+\.#{@options[:source_extensions]})\s*\"/).flatten
+    # parse out includes (NOTICE: system includes KEEP the angle-brackets in the string, to preserve this information)
+    headers = if @options[:use_system_files]
+                source.scan(/^\s*#include\s+(?:(<)|")\s*(.+\.#{@options[:include_extensions]})\s*(?:(>)|")/).map(&:join).flatten
+              else
+                source.scan(/^\s*#include\s+"\s*(.+\.#{@options[:include_extensions]})\s*"/).flatten
+              end
+    {
+      headers: headers,
+      linkonly: source.scan(/^TEST_SOURCE_FILE\(\s*"\s*(.+\.#{@options[:source_extensions]})\s*"/).flatten
     }
-    includes
   end
 
   def find_mocks(includes)
@@ -231,23 +250,46 @@ class UnityTestRunnerGenerator
     @options[:has_suite_teardown] ||= (source =~ /int\s+suiteTearDown\s*\(int\s+([a-zA-Z0-9_])+\s*\)/)
   end
 
-  def create_header(output, mocks, testfile_includes = [])
+  def count_tests(tests)
+    if @options[:use_param_tests]
+      idx = 0
+      tests.each do |test|
+        if test[:args].nil? || test[:args].empty?
+          idx += 1
+        else
+          test[:args].each { idx += 1 }
+        end
+      end
+      idx
+    else
+      tests.size
+    end
+  end
+
+  def create_header(output, mocks, headers = [])
     output.puts('/* AUTOGENERATED FILE. DO NOT EDIT. */')
     output.puts("\n/*=======Automagically Detected Files To Include=====*/")
     output.puts('extern "C" {') if @options[:externcincludes]
+    if @options[:shuffle_tests]
+      output.puts('#include <stdlib.h>')
+      if @options[:rng_seed] == 0
+        output.puts('#include <time.h>')
+      end
+    end
     output.puts("#include \"#{@options[:framework]}.h\"")
     output.puts('#include "cmock.h"') unless mocks.empty?
     output.puts('}') if @options[:externcincludes]
     if @options[:defines] && !@options[:defines].empty?
-      @options[:defines].each { |d| output.puts("#ifndef #{d}\n#define #{d}\n#endif /* #{d} */") }
+      output.puts('/* injected defines for unity settings, etc */')
+      @options[:defines].each do |d|
+        def_only = d.match(/(\w+).*/)[1]
+        output.puts("#ifndef #{def_only}\n#define #{d}\n#endif /* #{def_only} */")
+      end
     end
     if @options[:header_file] && !@options[:header_file].empty?
       output.puts("#include \"#{File.basename(@options[:header_file])}\"")
     else
-      @options[:includes].flatten.uniq.compact.each do |inc|
-        output.puts("#include #{inc.include?('<') ? inc : "\"#{inc}\""}")
-      end
-      testfile_includes.each do |inc|
+      [@options[:includes], headers].flatten.uniq.compact.each do |inc|
         output.puts("#include #{inc.include?('<') ? inc : "\"#{inc}\""}")
       end
     end
@@ -264,6 +306,16 @@ class UnityTestRunnerGenerator
     output.puts('int GlobalExpectCount;')
     output.puts('int GlobalVerifyOrder;')
     output.puts('char* GlobalOrderError;')
+  end
+
+  def create_run_test_params_struct(output)
+    output.puts("\n/*=======Structure Used By Test Runner=====*/")
+    output.puts('struct UnityRunTestParameters')
+    output.puts('{')
+    output.puts('  UnityTestFunction func;')
+    output.puts('  const char* name;')
+    output.puts('  UNITY_LINE_TYPE line_num;')
+    output.puts('};')
   end
 
   def create_externs(output, tests, _mocks)
@@ -289,7 +341,10 @@ class UnityTestRunnerGenerator
       output.puts('  GlobalOrderError = NULL;')
     end
 
-    mocks = mock_headers.map { |mock| File.basename(mock, '.*') }
+    # optionally keep the folder a mock is included from to match cmock's naming
+    mocks = mock_headers.map do |mock|
+      @options[:mock_name_include_folder] ? mock.sub(/\A(?:\.[\/\\])+/, '').sub(/\.[^.\/\\]*\z/, '') : File.basename(mock, '.*')
+    end
     mocks.each do |mock|
       mock_clean = TypeSanitizer.sanitize_c_identifier(mock)
       output.puts("  #{mock_clean}_Init();")
@@ -366,10 +421,43 @@ class UnityTestRunnerGenerator
   end
 
   def create_run_test(output)
-    require 'erb'
-    file = File.read(File.join(__dir__, 'run_test.erb'))
-    template = ERB.new(file, trim_mode: '<>')
-    output.puts("\n" + template.result(binding))
+    output.puts('/*=======Test Runner Used To Run Each Test=====*/')
+    output.puts('static void run_test(UnityTestFunction func, const char* name, UNITY_LINE_TYPE line_num)')
+    output.puts('{')
+    output.puts('    Unity.CurrentTestName = name;')
+    output.puts('    Unity.CurrentTestLineNumber = (UNITY_UINT) line_num;')
+    output.puts('#ifdef UNITY_USE_COMMAND_LINE_ARGS')
+    output.puts('    if (!UnityTestMatches())')
+    output.puts('        return;')
+    output.puts('#endif')
+    output.puts('    Unity.NumberOfTests++;')
+    output.puts('    UNITY_CLR_DETAILS();')
+    output.puts('    UNITY_EXEC_TIME_START();')
+    output.puts('    CMock_Init();')
+    output.puts('    if (TEST_PROTECT())')
+    output.puts('    {')
+    if @options[:plugins].include?(:cexception)
+      output.puts('        volatile CEXCEPTION_T e;')
+      output.puts('        Try {')
+      output.puts("            #{@options[:setup_name]}();")
+      output.puts('            func();')
+      output.puts('        } Catch(e) {')
+      output.puts('            TEST_ASSERT_EQUAL_HEX32_MESSAGE(CEXCEPTION_NONE, e, "Unhandled Exception!");')
+      output.puts('        }')
+    else
+      output.puts("        #{@options[:setup_name]}();")
+      output.puts('        func();')
+    end
+    output.puts('    }')
+    output.puts('    if (TEST_PROTECT())')
+    output.puts('    {')
+    output.puts("        #{@options[:teardown_name]}();")
+    output.puts('        CMock_Verify();')
+    output.puts('    }')
+    output.puts('    CMock_Destroy();')
+    output.puts('    UNITY_EXEC_TIME_STOP();')
+    output.puts('    UnityConcludeTest();')
+    output.puts('}')
   end
 
   def create_args_wrappers(output, tests)
@@ -388,29 +476,64 @@ class UnityTestRunnerGenerator
     end
   end
 
+  def create_warning_test(output, filename, tests)
+    if count_tests(tests) == 0
+      warning_test = {
+        :test => 'test_empty_warning',
+        :line_number => 0
+      }
+      output.puts("\n/*=======Warning Test=====*/")
+      output.puts("static void #{warning_test[:test]}(void)")
+      output.puts('{')
+      output.puts("    TEST_IGNORE_MESSAGE(\"Test file '#{filename.gsub(/\\/, '\\\\\\')}' contains no tests.\");")
+      output.puts("}\n")
+      tests = [warning_test]
+    end
+    tests
+  end
+
+  def create_shuffle_tests(output)
+    output.puts("\n/*=======Shuffle Test Order=====*/")
+    output.puts('static void shuffleTests(struct UnityRunTestParameters run_test_params_arr[], int num_of_tests)')
+    output.puts('{')
+
+    # Use Fisher-Yates shuffle algorithm
+    output.puts('  for (int i = num_of_tests - 1; i > 0; i--)')
+    output.puts('  {')
+    output.puts('    int j = rand() % (i + 1);')
+    output.puts('    struct UnityRunTestParameters temp = run_test_params_arr[i];')
+    output.puts('    run_test_params_arr[i] = run_test_params_arr[j];')
+    output.puts('    run_test_params_arr[j] = temp;')
+    output.puts('  }')
+    output.puts('}')
+  end
+
   def create_main(output, filename, tests, used_mocks)
     output.puts("\n/*=======MAIN=====*/")
-    main_name = @options[:main_name].to_sym == :auto ? "main_#{filename.gsub('.c', '')}" : (@options[:main_name]).to_s
+    main_name = @options[:main_name].to_sym == :auto ? "main_#{filename.gsub('.c', '')}" : @options[:main_name].to_s
     if @options[:cmdline_args]
       if main_name != 'main'
         output.puts("#{@options[:main_export_decl]} int #{main_name}(int argc, char** argv);")
       end
       output.puts("#{@options[:main_export_decl]} int #{main_name}(int argc, char** argv)")
       output.puts('{')
+      output.puts('(void)argc;')
+      output.puts('(void)argv;')
+      output.puts('#ifdef UNITY_USE_COMMAND_LINE_ARGS')
       output.puts('  int parse_status = UnityParseOptions(argc, argv);')
       output.puts('  if (parse_status != 0)')
       output.puts('  {')
       output.puts('    if (parse_status < 0)')
       output.puts('    {')
-      output.puts("      UnityPrint(\"#{filename.gsub('.c', '').gsub(/\\/, '\\\\\\')}.\");")
+      output.puts("      UnityPrint(\"#{filename.gsub(/\\/, '\\\\\\')}\");")
       output.puts('      UNITY_PRINT_EOL();')
       tests.each do |test|
-        if (!@options[:use_param_tests]) || test[:args].nil? || test[:args].empty?
+        if !@options[:use_param_tests] || test[:args].nil? || test[:args].empty?
           output.puts("      UnityPrint(\"  #{test[:test]}\");")
           output.puts('      UNITY_PRINT_EOL();')
         else
           test[:args].each do |args|
-            output.puts("      UnityPrint(\"  #{test[:test]}(#{args})\");")
+            output.puts("      UnityPrint(\"  #{test[:test]}(#{args.gsub('"', '').gsub("\n", '').gsub(/\\/, '\\\\\\')})\");")
             output.puts('      UNITY_PRINT_EOL();')
           end
         end
@@ -419,6 +542,7 @@ class UnityTestRunnerGenerator
       output.puts('    }')
       output.puts('    return parse_status;')
       output.puts('  }')
+      output.puts('#endif')
     else
       main_return = @options[:omit_begin_end] ? 'void' : 'int'
       if main_name != 'main'
@@ -433,42 +557,66 @@ class UnityTestRunnerGenerator
     else
       output.puts("  UnityBegin(\"#{filename.gsub(/\\/, '\\\\\\')}\");")
     end
-    tests.each do |test|
-      if (!@options[:use_param_tests]) || test[:args].nil? || test[:args].empty?
-        output.puts("  run_test(#{test[:test]}, \"#{test[:test]}\", #{test[:line_number]});")
+    if @options[:shuffle_tests]
+      output.puts
+      if @options[:rng_seed] == 0
+        output.puts('  srand(time(NULL));')
       else
-        test[:args].each.with_index(1) do |args, idx|
-          wrapper = "runner_args#{idx}_#{test[:test]}"
+        output.puts("  srand(#{@options[:rng_seed]});")
+      end
+    end
+    output.puts
+    output.puts("  struct UnityRunTestParameters run_test_params_arr[#{count_tests(tests)}];")
+    output.puts
+    idx = 0
+    tests.each do |test|
+      if !@options[:use_param_tests] || test[:args].nil? || test[:args].empty?
+        output.puts("  run_test_params_arr[#{idx}].func = #{test[:test]};")
+        output.puts("  run_test_params_arr[#{idx}].name = \"#{test[:test]}\";")
+        output.puts("  run_test_params_arr[#{idx}].line_num = #{test[:line_number]};")
+        idx += 1
+      else
+        test[:args].each.with_index(1) do |args, arg_idx|
+          wrapper = "runner_args#{arg_idx}_#{test[:test]}"
           testname = "#{test[:test]}(#{args})".dump
-          output.puts("  run_test(#{wrapper}, #{testname}, #{test[:line_number]});")
+          output.puts("  run_test_params_arr[#{idx}].func = #{wrapper};")
+          output.puts("  run_test_params_arr[#{idx}].name = #{testname};")
+          output.puts("  run_test_params_arr[#{idx}].line_num = #{test[:line_number]};")
+          idx += 1
         end
       end
     end
     output.puts
+    if @options[:shuffle_tests]
+      output.puts("  shuffleTests(run_test_params_arr, #{count_tests(tests)});")
+      output.puts
+    end
+    output.puts("  for (int i = 0; i < #{count_tests(tests)}; i++)")
+    output.puts('  {')
+    output.puts('    run_test(run_test_params_arr[i].func, run_test_params_arr[i].name, run_test_params_arr[i].line_num);')
+    output.puts('  }')
+    output.puts
     output.puts('  CMock_Guts_MemFreeFinal();') unless used_mocks.empty?
     if @options[:has_suite_teardown]
       if @options[:omit_begin_end]
-        output.puts('  (void) suite_teardown(0);')
+        output.puts('  (void) suiteTearDown(0);')
       else
-        output.puts('  return suiteTearDown(UnityEnd());')
+        output.puts('  return suiteTearDown(UNITY_END());')
       end
     else
-      output.puts('  return UnityEnd();') unless @options[:omit_begin_end]
+      output.puts('  return UNITY_END();') unless @options[:omit_begin_end]
     end
     output.puts('}')
   end
 
-  def create_h_file(output, filename, tests, testfile_includes, used_mocks)
-    filename = File.basename(filename).gsub(/[-\/\\\.\,\s]/, '_').upcase
+  def create_h_file(output, filename, tests, headers, used_mocks)
+    filename = File.basename(filename).gsub(/[-\/\\.,\s]/, '_').upcase
     output.puts('/* AUTOGENERATED FILE. DO NOT EDIT. */')
     output.puts("#ifndef _#{filename}")
     output.puts("#define _#{filename}\n\n")
     output.puts("#include \"#{@options[:framework]}.h\"")
     output.puts('#include "cmock.h"') unless used_mocks.empty?
-    @options[:includes].flatten.uniq.compact.each do |inc|
-      output.puts("#include #{inc.include?('<') ? inc : "\"#{inc}\""}")
-    end
-    testfile_includes.each do |inc|
+    [@options[:includes], headers].flatten.uniq.compact.each do |inc|
       output.puts("#include #{inc.include?('<') ? inc : "\"#{inc}\""}")
     end
     output.puts "\n"
@@ -498,7 +646,7 @@ if $0 == __FILE__
     when /\.*\.ya?ml$/
       options = UnityTestRunnerGenerator.grab_config(arg)
       true
-    when /--(\w+)=\"?(.*)\"?/
+    when /--(\w+)="?(.*)"?/
       options[Regexp.last_match(1).to_sym] = Regexp.last_match(2)
       true
     when /\.*\.(?:hpp|hh|H|h)$/
@@ -529,8 +677,10 @@ if $0 == __FILE__
           '    --suite_setup=""      - code to execute for setup of entire suite',
           '    --suite_teardown=""   - code to execute for teardown of entire suite',
           '    --use_param_tests=1   - enable parameterized tests (disabled by default)',
-          '    --omit_begin_end=1    - omit calls to UnityBegin and UnityEnd (disabled by default)',
-          '    --header_file=""      - path/name of test header file to generate too'].join("\n")
+          '    --omit_begin_end=1    - omit calls to UnityBegin and UNITY_END (disabled by default)',
+          '    --header_file=""      - path/name of test header file to generate too',
+          '    --shuffle_tests=1     - enable shuffling of the test execution order (disabled by default)',
+          '    --rng_seed=1          - seed value for randomization of test execution order'].join("\n")
     exit 1
   end
 

@@ -1,16 +1,21 @@
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-24 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 CC = gcc
 ifeq ($(shell uname -s), Darwin)
 CC = clang
 endif
 ifeq ($(findstring clang, $(CC)), clang)
-E = -Weverything
-CFLAGS += $E -Wno-unknown-warning-option -Wno-missing-prototypes
-CFLAGS += -Wno-unused-macros -Wno-padded -Wno-missing-noreturn
+CFLAGS += -Wno-unknown-warning-option
+CFLAGS += -Wno-unsafe-buffer-usage
 endif
 CFLAGS += -std=c99 -pedantic -Wall -Wextra -Werror
 #CFLAGS += -Wconversion #disabled because if falsely complains about the isinf and isnan macros
-CFLAGS += -Wno-switch-enum -Wno-double-promotion
-CFLAGS += -Wno-poison-system-directories
+CFLAGS += -Wno-switch-enum -Wno-double-promotion -Wno-poison-system-directories -Wno-missing-noreturn
+CFLAGS += -Wno-covered-switch-default
 CFLAGS += -Wbad-function-cast -Wcast-qual -Wold-style-definition -Wshadow -Wstrict-overflow \
           -Wstrict-prototypes -Wswitch-default -Wundef
 #DEBUG = -O0 -g
@@ -37,8 +42,8 @@ TARGET = build/testunity-cov.exe
 
 # To generate coverage, call 'make -s', the default target runs.
 # For verbose output of all the tests, run 'make test'.
-default: coverage
-.PHONY: default coverage test clean
+default: test
+.PHONY: default coverage test clean intDetection execTimeDetection
 coverage: $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5) $(SRC6) $(SRC7) $(SRC8)
 	cd $(BUILD_DIR) && \
 	$(CC) $(CFLAGS) $(DEFINES) $(foreach i,$(SRC1), ../$i) $(COV_FLAGS) -o ../$(TARGET)
@@ -117,9 +122,16 @@ test: $(SRC1) $(SRC2) $(SRC3) $(SRC4) $(SRC5) $(SRC6) $(SRC7) $(SRC8)
 
 # Compile only, for testing that preprocessor detection works
 UNITY_C_ONLY =-c ../src/unity.c -o $(BUILD_DIR)/unity.o
-intDetection:
+intDetection: | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC_DIR) $(UNITY_C_ONLY) -D UNITY_EXCLUDE_STDINT_H
 	$(CC) $(CFLAGS) $(INC_DIR) $(UNITY_C_ONLY) -D UNITY_EXCLUDE_LIMITS_H
+
+# UNITY_INCLUDE_EXEC_TIME is optional and was historically untested, so the
+# default timer macros could rot. Compile them with Unity's own warning flags
+# and with -Wsign-conversion (the failure reported in #838).
+execTimeDetection: | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INC_DIR) $(UNITY_C_ONLY) -D UNITY_INCLUDE_EXEC_TIME
+	$(CC) $(CFLAGS) -Wsign-conversion $(INC_DIR) $(UNITY_C_ONLY) -D UNITY_INCLUDE_EXEC_TIME
 
 $(BUILD_DIR)/test_unity_arraysRunner.c: tests/test_unity_arrays.c | $(BUILD_DIR)
 	awk $(AWK_SCRIPT) tests/test_unity_arrays.c > $@

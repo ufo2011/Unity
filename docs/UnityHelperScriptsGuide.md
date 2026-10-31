@@ -94,12 +94,12 @@ UnityTestRunnerGenerator.new.run(testfile, runner_name, options)
 ```
 
 If you have multiple files to generate in a build script (such as a Rakefile), you might want to instantiate a generator object with your options and call it to generate each runner afterwards.
-Like thus:
+Like this:
 
 ```Ruby
 gen = UnityTestRunnerGenerator.new(options)
 test_files.each do |f|
-  gen.run(f, File.basename(f,'.c')+"Runner.c"
+  gen.run(f, File.basename(f,'.c')+"Runner.c")
 end
 ```
 
@@ -114,12 +114,19 @@ In the `examples` directory, Example 3's Rakefile demonstrates using a Ruby hash
 This option specifies an array of file names to be `#include`'d at the top of your runner C file.
 You might use it to reference custom types or anything else universally needed in your generated runners.
 
+##### `:defines`
+
+This option specifies an array of definitions to be `#define`'d at the top of your runner C file.
+Each definition will be wrapped in an `#ifndef`.
+
 ##### `:suite_setup`
 
 Define this option with C code to be executed _before any_ test cases are run.
 
 Alternatively, if your C compiler supports weak symbols, you can leave this option unset and instead provide a `void suiteSetUp(void)` function in your test suite.
 The linker will look for this symbol and fall back to a Unity-provided stub if it is not found.
+
+This option can also be specified at the command prompt as `--suite_setup=""`
 
 ##### `:suite_teardown`
 
@@ -131,6 +138,8 @@ You can normally just return `num_failures`.
 Alternatively, if your C compiler supports weak symbols, you can leave this option unset and instead provide a `int suiteTearDown(int num_failures)` function in your test suite.
 The linker will look for this symbol and fall back to a Unity-provided stub if it is not found.
 
+This option can also be specified at the command prompt as `--suite_teardown=""`
+
 ##### `:enforce_strict_ordering`
 
 This option should be defined if you have the strict order feature enabled in CMock (see CMock documentation).
@@ -141,10 +150,21 @@ If you provide the same YAML to the generator as used in CMock's configuration, 
 
 This option should be defined if you are mixing C and CPP and want your test runners to automatically include extern "C" support when they are generated.
 
+This option can also be specified at the command prompt as `--externc`
+
 ##### `:mock_prefix` and `:mock_suffix`
 
 Unity automatically generates calls to Init, Verify and Destroy for every file included in the main test file that starts with the given mock prefix and ends with the given mock suffix, file extension not included.
 By default, Unity assumes a `Mock` prefix and no suffix.
+
+##### `:mock_name_include_folder`
+
+This option names each mock's Init, Verify and Destroy calls by the folder a mock is included from as well as its filename.
+A mock included as `uart/MockConfig.h` gets a call to `uart_MockConfig_Init()` rather than `MockConfig_Init()`.
+This keeps two mocks of the same filename in different folders distinct within one test.
+CMock offers an option of the same name that names its generated functions the same way, and the two must agree.
+If you provide the same YAML to the generator as used in CMock's configuration, you've already configured the generator properly.
+By default, Unity names mocks by filename alone.
 
 ##### `:plugins`
 
@@ -165,7 +185,10 @@ Or as a yaml file:
 
 If you are using CMock, it is very likely that you are already passing an array of plugins to CMock.
 You can just use the same array here.
+
 This script will just ignore the plugins that don't require additional support.
+
+This option can also be specified at the command prompt as `--cexception`
 
 ##### `:include_extensions`
 
@@ -191,7 +214,96 @@ Few usage examples can be found in `/test/tests/test_unity_parameterized.c` file
 You should define `UNITY_SUPPORT_TEST_CASES` macro for tests success compiling,
 if you enable current option.
 
-You can see list of supported macros list in the next section.
+You can see a list of supported macros in the
+[Parameterized tests provided macros](#parameterized-tests-provided-macros)
+section that follows.
+
+This option can also be specified at the command prompt as `--use_param_tests=1`
+
+##### `:cmdline_args`
+
+When set to `true`, the generated test runner can accept a number of
+options to modify how the test(s) are run.
+
+Ensure Unity is compiled with `UNITY_USE_COMMAND_LINE_ARGS` defined or else
+the required functions will not exist.
+
+These are the available options:
+
+| Option    | Description                                       |
+| --------- | ------------------------------------------------- |
+| `-l`      | List all tests and exit                           |
+| `-f NAME` | Filter to run only tests whose name includes NAME |
+| `-n NAME` | Run only the test named NAME                      |
+| `-h`      | show the Help menu that lists these options       |
+| `-q`      | Quiet/decrease verbosity                          |
+| `-v`      | increase Verbosity                                |
+| `-x NAME` | eXclude tests whose name includes NAME            |
+
+Several names can be given as a comma-separated list. A comma inside parentheses is
+part of the name, so `-f "test_first(0,0)"` selects one parameterized test case.
+
+##### `:setup_name`
+
+Override the default test `setUp` function name.
+
+This option can also be specified at the command prompt as `--setup_name=""`
+
+##### `:teardown_name`
+
+Override the default test `tearDown` function name.
+
+This option can also be specified at the command prompt as `--teardown_name=""`
+
+##### `:test_reset_name`
+
+Override the default test `resetTest` function name.
+
+This option can also be specified at the command prompt as `--test_reset_name=""`
+
+##### `:test_verify_name`
+
+Override the default test `verifyTest` function name.
+
+This option can also be specified at the command prompt as `--test_verify_name=""`
+
+##### `:main_name`
+
+Override the test's `main()` function name (from `main` to whatever is specified).
+The sentinel value `:auto` will use the test's filename with the `.c` extension removed prefixed
+with `main_` as the "main" function.
+
+To clarify, if `:main_name == :auto` and the test filename is "test_my_project.c", then the
+generated function name will be `main_test_my_project(int argc, char** argv)`.
+
+This option can also be specified at the command prompt as `--main_name=""`
+
+##### `main_export_decl`
+
+Provide any `cdecl` for the `main()` test function. Is empty by default.
+
+##### `:omit_begin_end`
+
+If `true`, the `UnityBegin` and `UnityEnd` function will not be called for
+Unity test state setup and cleanup.
+
+This option can also be specified at the command prompt as `--omit_begin_end`
+
+##### `:shuffle_tests`
+
+If `true`, the test execution order will be shuffled. Is `false` by default.
+
+This option can also be specified at the command prompt as `--shuffle_tests`
+
+##### `:rng_seed`
+
+If set to some positive integer value, said value will be used as the seed value passed
+to the `srand` function. Otherwise, if not set to any value, `time(NULL)` will be used
+as the seed value.
+
+Only applicable if `:shuffle_tests` is set to `true`.
+
+This option can also be specified at the command prompt as `--rng_seed`
 
 #### Parameterized tests provided macros
 
@@ -199,7 +311,7 @@ Unity provides support for few param tests generators, that can be combined
 with each other. You must define test function as usual C function with usual
 C arguments, and test generator will pass what you tell as a list of arguments.
 
-Let's show how all of them works on the following test function definitions:
+Let's show how all of them work on the following test function definitions:
 
 ```C
 /* Place your test generators here, usually one generator per one or few lines */
@@ -301,17 +413,17 @@ TEST_CASE(4, 6, 30)
 Test matix is an advanced generator. It single call can be converted to zero,
 one or few `TEST_CASE` equivalent commands.
 
-That generator will create tests for all cobinations of the provided list. Each argument has to be given as a list of one or more elements in the format `[<parm1>, <param2>, ..., <paramN-1>, <paramN>]`.
+That generator will create tests for all combinations of the provided list. Each argument has to be given as a list of one or more elements in the format `[<parm1>, <param2>, ..., <paramN-1>, <paramN>]`.
 
-All parameters supported by the `TEST_CASE` is supported as arguments:
+All parameters supported by the `TEST_CASE` are supported as arguments:
 - Numbers incl type specifiers e.g. `<1>`, `<1u>`, `<1l>`, `<2.3>`, or `<2.3f>`
-- Strings incl string concatianion e.g. `<"string">`, or `<"partial" "string">`
+- Strings incl string concatenation e.g. `<"string">`, or `<"partial" "string">`
 - Chars e.g. `<'c'>`
 - Enums e.g. `<ENUM_NAME>`
 - Elements of arrays e.g. `<data[0]>`
 
-Let's use our `test_demoParamFunction` test for checking, what ranges
-will be generated for our single `TEST_RANGE` row:
+Let's use our `test_demoParamFunction` test for checking what ranges
+will be generated for our single `TEST_MATRIX` row:
 
 ```C
 TEST_MATRIX([3, 4, 7], [10, 8, 2, 1],[30u, 20.0f])
@@ -350,11 +462,11 @@ As we can see:
 
 | Parameter | Format | Count of values |
 |---|---|---|
-| `a` | `[3, 4, 7]` | 2 |
+| `a` | `[3, 4, 7]` | 3 |
 | `b` | `[10, 8, 2, 1]` | 4 |
 | `c` | `[30u, 20.0f]` | 2 |
 
-We totally have 2 * 4 * 2 = 16 equal test cases, that can be written as following:
+We totally have 3 * 4 * 2 = 24 equal test cases, that can be written as following:
 
 ```C
 TEST_CASE(3, 10, 30u)
@@ -416,7 +528,7 @@ ruby unity_test_summary.rb build/test/ ~/projects/myproject/
 Or, if you're more of a Windows sort of person:
 
 ```Shell
-ruby unity_test_summary.rb build\teat\ C:\projects\myproject\
+ruby unity_test_summary.rb build\test\ C:\projects\myproject\
 ```
 
 When configured correctly, you'll see a final summary, like so:

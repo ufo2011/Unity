@@ -1,16 +1,17 @@
-/* ==========================================
-    Unity Project - A Test Framework for C
-    Copyright (c) 2007-21 Mike Karlesky, Mark VanderVoord, Greg Williams
-    [Released under MIT License. Please refer to license.txt for details]
-========================================== */
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
 
 #ifndef UNITY_FRAMEWORK_H
 #define UNITY_FRAMEWORK_H
 #define UNITY
 
 #define UNITY_VERSION_MAJOR    2
-#define UNITY_VERSION_MINOR    5
-#define UNITY_VERSION_BUILD    4
+#define UNITY_VERSION_MINOR    7
+#define UNITY_VERSION_BUILD    2
 #define UNITY_VERSION          ((UNITY_VERSION_MAJOR << 16) | (UNITY_VERSION_MINOR << 8) | UNITY_VERSION_BUILD)
 
 #ifdef __cplusplus
@@ -25,7 +26,7 @@ extern "C"
  *-------------------------------------------------------*/
 
 /* These functions are intended to be called before and after each test.
- * If using unity directly, these will need to be provided for each test
+ * If using Unity directly, these will need to be provided for each test
  * executable built. If you are using the test runner generator and/or
  * Ceedling, these are optional. */
 void setUp(void);
@@ -44,7 +45,7 @@ int suiteTearDown(int num_failures);
  * Test Reset and Verify
  *-------------------------------------------------------*/
 
-/* These functions are intended to be called before during tests in order
+/* These functions are intended to be called before or during tests in order
  * to support complex test loops, etc. Both are NOT built into Unity. Instead
  * the test runner generator will create them. resetTest will run teardown and
  * setup again, verifying any end-of-test needs between. verifyTest will only
@@ -118,7 +119,7 @@ void verifyTest(void);
  *-------------------------------------------------------
 
  * These macros do nothing, but they are useful for additional build context.
- * Tools (like Ceedling) can scan for these directives and make use of them for 
+ * Tools (like Ceedling) can scan for these directives and make use of them for
  * per-test-executable #include search paths and linking. */
 
 /* Add source files to a test executable's compilation and linking. Ex: TEST_SOURCE_FILE("sandwiches.c") */
@@ -300,6 +301,12 @@ void verifyTest(void);
 #define TEST_ASSERT_EQUAL_STRING(expected, actual)                                                 UNITY_TEST_ASSERT_EQUAL_STRING((expected), (actual), __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_STRING_LEN(expected, actual, len)                                        UNITY_TEST_ASSERT_EQUAL_STRING_LEN((expected), (actual), (len), __LINE__, NULL)
 #define TEST_ASSERT_EQUAL_MEMORY(expected, actual, len)                                            UNITY_TEST_ASSERT_EQUAL_MEMORY((expected), (actual), (len), __LINE__, NULL)
+
+/* Structs and Strings Not Equal To */
+#define TEST_ASSERT_NOT_EQUAL_PTR(expected, actual)                                                UNITY_TEST_ASSERT_NOT_EQUAL_PTR((expected), (actual), __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_STRING(expected, actual)                                             UNITY_TEST_ASSERT_NOT_EQUAL_STRING((expected), (actual), __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_STRING_LEN(expected, actual, len)                                    UNITY_TEST_ASSERT_NOT_EQUAL_STRING_LEN((expected), (actual), (len), __LINE__, NULL)
+#define TEST_ASSERT_NOT_EQUAL_MEMORY(expected, actual, len)                                        UNITY_TEST_ASSERT_NOT_EQUAL_MEMORY((expected), (actual), (len), __LINE__, NULL)
 
 /* Arrays */
 #define TEST_ASSERT_EQUAL_INT_ARRAY(expected, actual, num_elements)                                UNITY_TEST_ASSERT_EQUAL_INT_ARRAY((expected), (actual), (num_elements), __LINE__, NULL)
@@ -583,6 +590,12 @@ void verifyTest(void);
 #define TEST_ASSERT_EQUAL_STRING_MESSAGE(expected, actual, message)                                UNITY_TEST_ASSERT_EQUAL_STRING((expected), (actual), __LINE__, (message))
 #define TEST_ASSERT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, message)                       UNITY_TEST_ASSERT_EQUAL_STRING_LEN((expected), (actual), (len), __LINE__, (message))
 #define TEST_ASSERT_EQUAL_MEMORY_MESSAGE(expected, actual, len, message)                           UNITY_TEST_ASSERT_EQUAL_MEMORY((expected), (actual), (len), __LINE__, (message))
+
+/* Structs and Strings Not Equal To */
+#define TEST_ASSERT_NOT_EQUAL_PTR_MESSAGE(expected, actual, message)                               UNITY_TEST_ASSERT_NOT_EQUAL_PTR((expected), (actual), __LINE__, (message))
+#define TEST_ASSERT_NOT_EQUAL_STRING_MESSAGE(expected, actual, message)                            UNITY_TEST_ASSERT_NOT_EQUAL_STRING((expected), (actual), __LINE__, (message))
+#define TEST_ASSERT_NOT_EQUAL_STRING_LEN_MESSAGE(expected, actual, len, message)                   UNITY_TEST_ASSERT_NOT_EQUAL_STRING_LEN((expected), (actual), (len), __LINE__, (message))
+#define TEST_ASSERT_NOT_EQUAL_MEMORY_MESSAGE(expected, actual, len, message)                       UNITY_TEST_ASSERT_NOT_EQUAL_MEMORY((expected), (actual), (len), __LINE__, (message))
 
 /* Arrays */
 #define TEST_ASSERT_EQUAL_INT_ARRAY_MESSAGE(expected, actual, num_elements, message)               UNITY_TEST_ASSERT_EQUAL_INT_ARRAY((expected), (actual), (num_elements), __LINE__, (message))

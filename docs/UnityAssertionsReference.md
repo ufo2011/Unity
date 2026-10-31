@@ -1,5 +1,35 @@
 # Unity Assertions Reference
 
+## Table of Contents
+
+1. [Background and Overview](#background-and-overview)
+   1. [Super Condensed Version](#super-condensed-version)
+   2. [Unity Is Several Things But Mainly It’s Assertions](#unity-is-several-things-but-mainly-its-assertions)
+   3. [What’s an Assertion?](#whats-an-assertion)
+   4. [Unity’s Assertions: Helpful Messages _and_ Free Source Code Documentation](#unitys-assertions-helpful-messages-and-free-source-code-documentation)
+2. [Assertion Conventions and Configurations](#assertion-conventions-and-configurations)
+   1. [Naming and Parameter Conventions](#naming-and-parameter-conventions)
+   2. [TEST_ASSERT_EACH_EQUAL_X Variants](#test_assert_each_equal_x-variants)
+   3. [Configuration](#configuration)
+3. [The Assertions in All Their Blessed Glory](#the-assertions-in-all-their-blessed-glory)
+   1. [Basic Fail, Pass and Ignore](#basic-fail-pass-and-ignore)
+   2. [Boolean](#boolean)
+   3. [Signed and Unsigned Integers (of all sizes)](#signed-and-unsigned-integers-of-all-sizes)
+   4. [Unsigned Integers (of all sizes) in Hexadecimal](#unsigned-integers-of-all-sizes-in-hexadecimal)
+   5. [Characters](#characters)
+   6. [Masked and Bit-level Assertions](#masked-and-bit-level-assertions)
+   7. [Integer Less Than / Greater Than](#integer-less-than--greater-than)
+   8. [Integer Ranges (of all sizes)](#integer-ranges-of-all-sizes)
+   9. [Structs and Strings](#structs-and-strings)
+   10. [Arrays](#arrays)
+   11. [Integer Array Ranges (of all sizes)](#integer-array-ranges-of-all-sizes)
+   12. [Each Equal (Arrays to Single Value)](#each-equal-arrays-to-single-value)
+   13. [Floating Point (If enabled)](#floating-point-if-enabled)
+   14. [Double (If enabled)](#double-if-enabled)
+4. [Advanced Asserting: Details On Tricky Assertions](#advanced-asserting-details-on-tricky-assertions)
+   1. [How do the EQUAL assertions work for FLOAT and DOUBLE?](#how-do-the-equal-assertions-work-for-float-and-double)
+   2. [How do we deal with targets with non-standard int sizes?](#how-do-we-deal-with-targets-with-non-standard-int-sizes)
+
 ## Background and Overview
 
 ### Super Condensed Version
@@ -390,18 +420,53 @@ of 7 - 13.
 
 Asserts that the pointers point to the same memory location.
 
+#### `TEST_ASSERT_NOT_EQUAL_PTR (expected, actual)`
+
+Asserts that the pointers DO NOT point to the same memory location. Two NULL
+pointers are considered equal and will cause this assertion to fail. A NULL
+pointer and a non-NULL pointer are considered not equal and will pass.
+
 #### `TEST_ASSERT_EQUAL_STRING (expected, actual)`
 
-Asserts that the null terminated (`’\0’`)strings are identical. If strings are
+Asserts that the null terminated (`’\0’`) strings are identical. If strings are
 of different lengths or any portion of the strings before their terminators
 differ, the assertion fails. Two NULL strings (i.e. zero length) are considered
 equivalent.
+
+#### `TEST_ASSERT_NOT_EQUAL_STRING (expected, actual)`
+
+Asserts that the null terminated (`’\0’`) strings are NOT identical. The
+assertion passes if the strings differ in length or content at any point before
+their null terminators. A NULL pointer and a non-NULL string are considered not
+equal and will pass. Two NULL pointers are considered equal and will fail.
+
+#### `TEST_ASSERT_EQUAL_STRING_LEN (expected, actual, len)`
+
+Asserts that the null terminated (`’\0’`) strings are identical up to the specified length.
+It checks only the first `len` characters, not the entire string.
+
+#### `TEST_ASSERT_NOT_EQUAL_STRING_LEN (expected, actual, len)`
+
+Asserts that the null terminated (`’\0’`) strings are NOT identical within the
+first `len` characters. The assertion passes if the strings differ at any
+position within the specified length. A NULL pointer and a non-NULL string are
+considered not equal and will pass. Two NULL pointers are considered equal and
+will fail. Specifying a `len` of zero is considered pointless and will fail.
 
 #### `TEST_ASSERT_EQUAL_MEMORY (expected, actual, len)`
 
 Asserts that the contents of the memory specified by the `expected` and `actual`
 pointers is identical. The size of the memory blocks in bytes is specified by
 the `len` parameter.
+
+#### `TEST_ASSERT_NOT_EQUAL_MEMORY (expected, actual, len)`
+
+Asserts that the contents of the memory specified by the `expected` and `actual`
+pointers is NOT identical within the first `len` bytes. The assertion passes if
+any byte differs within that range. A NULL pointer and a non-NULL pointer are
+considered not equal and will pass. Two NULL pointers (or the same pointer) are
+considered equal and will fail. Specifying a `len` of zero is considered
+pointless and will fail.
 
 ### Arrays
 

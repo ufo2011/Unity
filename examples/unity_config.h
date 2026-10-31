@@ -1,3 +1,10 @@
+/* =========================================================================
+    Unity - A Test Framework for C
+    ThrowTheSwitch.org
+    Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+    SPDX-License-Identifier: MIT
+========================================================================= */
+
 /* Unity Configuration
  * As of May 11th, 2016 at ThrowTheSwitch/Unity commit 837c529
  * Update: December 29th, 2016
@@ -102,7 +109,7 @@
  * There can be a significant size and speed impact to enabling 64-bit support
  * on small targets, so don't define it if you don't need it.
  */
-/* #define UNITY_INCLUDE_64 */
+/* #define UNITY_SUPPORT_64 */
 
 
 /* *************************** FLOATING POINT TYPES ****************************
@@ -221,8 +228,10 @@
 /* #define UNITY_OUTPUT_CHAR_HEADER_DECLARATION    RS232_putc(int) */
 /* #define UNITY_OUTPUT_FLUSH()                    RS232_flush() */
 /* #define UNITY_OUTPUT_FLUSH_HEADER_DECLARATION   RS232_flush(void) */
-/* #define UNITY_OUTPUT_START()                    RS232_config(115200,1,8,0) */
-/* #define UNITY_OUTPUT_COMPLETE()                 RS232_close() */
+/* #define UNITY_OUTPUT_START()                       RS232_config(115200,1,8,0) */
+/* #define UNITY_OUTPUT_START_HEADER_DECLARATION       RS232_config(int,int,int,int) */
+/* #define UNITY_OUTPUT_COMPLETE()                    RS232_close() */
+/* #define UNITY_OUTPUT_COMPLETE_HEADER_DECLARATION    RS232_close(void) */
 
 /* Some compilers require a custom attribute to be assigned to pointers, like
  * `near` or `far`. In these cases, you can give Unity a safe default for these
@@ -240,5 +249,13 @@
  * TEST - PASS (10 ms)
  */
 /* #define UNITY_INCLUDE_EXEC_TIME */
+
+/* Define this macro to redefine what the UnityPrintChar() function considers
+ * a printable character.
+ *
+ * Example, for printing UTF-8:
+ * #define UNITY_IS_PRINTABLE_CHAR(c) ((128 <= (c)) && ((c) <= 255))
+*/
+/* #define UNITY_IS_PRINTABLE_CHAR(c) ((32 <= (c)) && ((c) <= 126)) */
 
 #endif /* UNITY_CONFIG_H */

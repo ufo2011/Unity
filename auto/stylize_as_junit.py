@@ -1,13 +1,14 @@
-#! python3
-# ==========================================
-#   Fork from Unity Project - A Test Framework for C
-#   Pull request on Gerrit in progress, the objective of this file is to be deleted when official Unity deliveries
-#   include that modification
-#   Copyright (c) 2015 Alexander Mueller / XelaRellum@web.de
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+#!/usr/bin/env python3
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
+
 import sys
 import os
+import re
 from glob import glob
 import argparse
 
@@ -39,9 +40,7 @@ class UnityTestSummary:
                 raise Exception("Empty test result file: %s" % result_file)
 
             # define an expression for your file reference
-            entry_one = Combine(
-                oneOf(list(alphas)) + ':/' +
-                Word(alphanums + '_-./'))
+            entry_one = Regex(r'[A-Za-z]:[\\/][^:\r\n]+')
 
             entry_two = Word(printables + ' ', excludeChars=':')
             entry = entry_one | entry_two
@@ -110,7 +109,7 @@ class UnityTestSummary:
                     self.test_suites[k] = [v]
         ts = []
         for suite_name in self.test_suites:
-            ts.append(TestSuite(suite_name, self.test_suites[suite_name]))
+            ts.append(TestSuite(re.sub(r'\.(testfail|testpass|testResults)$', '', suite_name), self.test_suites[suite_name]))
 
         with open(self.output, 'w') as f:
             TestSuite.to_file(f, ts, prettyprint='True', encoding='utf-8')

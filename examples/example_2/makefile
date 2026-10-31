@@ -1,8 +1,9 @@
-# ==========================================
-#   Unity Project - A Test Framework for C
-#   Copyright (c) 2007 Mike Karlesky, Mark VanderVoord, Greg Williams
-#   [Released under MIT License. Please refer to license.txt for details]
-# ==========================================
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-24 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
 
 #We try to detect the OS we are running on, and adjust commands as needed
 ifeq ($(OS),Windows_NT)
@@ -38,10 +39,10 @@ CFLAGS += -Wunreachable-code
 CFLAGS += -Winit-self
 CFLAGS += -Wmissing-field-initializers
 CFLAGS += -Wno-unknown-pragmas
+CFLAGS += -Wno-misleading-indentation
 CFLAGS += -Wstrict-prototypes
 CFLAGS += -Wundef
 CFLAGS += -Wold-style-definition
-#CFLAGS += -Wno-misleading-indentation
 
 TARGET_BASE1=all_tests
 TARGET1 = $(TARGET_BASE1)$(TARGET_EXTENSION)

@@ -1,13 +1,16 @@
-#!/usr/bin/ruby
-#
-# unity_to_junit.rb
-#
+#!/usr/bin/env ruby
+# =========================================================================
+#   Unity - A Test Framework for C
+#   ThrowTheSwitch.org
+#   Copyright (c) 2007-26 Mike Karlesky, Mark VanderVoord, & Greg Williams
+#   SPDX-License-Identifier: MIT
+# =========================================================================
+
+require 'cgi'
 require 'fileutils'
 require 'optparse'
 require 'ostruct'
 require 'set'
-
-require 'pp'
 
 VERSION = 1.0
 
@@ -99,7 +102,7 @@ class UnityToJUnit
       test_file = if test_file_str.length < 2
                     result_file
                   else
-                    test_file_str[0] + ':' + test_file_str[1]
+                    "#{test_file_str[0]}:#{test_file_str[1]}"
                   end
       result_output[:source][:path] = File.dirname(test_file)
       result_output[:source][:file] = File.basename(test_file)
@@ -141,6 +144,7 @@ class UnityToJUnit
     lines.each do |line|
       line = line.tr('\\', '/')
       _src_file, src_line, test_name, status, msg = line.split(/:/)
+      test_name = CGI.escapeHTML(test_name.to_s)
       case status
       when 'IGNORE' then results[:ignores] << { test: test_name, line: src_line, message: msg }
       when 'FAIL'   then results[:failures] << { test: test_name, line: src_line, message: msg }
